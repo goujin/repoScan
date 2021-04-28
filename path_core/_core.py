@@ -28,6 +28,8 @@ def lss(directory):
                     bestRegex = regex
                     bestResults = results
             if bestResults:
+
+                print bestRegex.pattern
                 print "I'm a sequence: {}".format(bestResults)
             else:
                 print("I'm a file: {}".format(basename))
@@ -41,7 +43,7 @@ def lss(directory):
 def recursiveCheckPatterns(path):
     pass
 
-lss(TEST_DIRECTORY)
+# lss(TEST_DIRECTORY)
 
 
 
@@ -58,12 +60,55 @@ class Sequence(object):
         self.frameRange = None
         pass
 
-    def figureOutFrameRange(self):
-        pass
+    def __str__(self):
+        return ' '.join([str(len(self.frames)), self.path, self.frameRange])
 
     @classmethod
-    def fromList(cls, frameList):
+    def fromRegexAndFiles(cls, regex, files):
         sequence = cls()
-        sequence.frames = frameList
-        # TODO finish implement
-        pass
+        sequence.frames = files
+
+        match = filter(regex, files)
+        padding = '%d' if len(match[0]) == 1 else '%0{}d'.format(len(match[0]))
+        sequence.path = files[0].replace(match[0], padding)
+        sequence.frameRange = cls._figureOutFrameRange(match)
+        return sequence
+
+    @staticmethod
+    def _figureOutFrameRange(frameNumbers):
+        """
+        Implementation details to output a frame range string in this style "40-43 45-49 50 53-54"
+        It will takes in consideration that the frames might come with padding and it will remove it by using
+        `str(int(n))`.
+        padding which must be removed to
+        :param frameNumbers: a list of strings representing frames.
+        :type frameNumbers: list
+        :return: str
+        """
+        frameNumbers = [int(x) for x in frameNumbers]
+        frameNumbers.sort()
+        maxPoint = max(frameNumbers)
+        frameString = ''
+        previous = None
+        isFollowup = None
+        for frame in frameNumbers:
+            if not previous:
+                frameString += str(frame)
+                previous = frame
+                continue
+            if previous+1 != frame and not isFollowup:
+                frameString += ' {}'.format(frame)
+                previous = frame
+                continue
+            if previous+1 != frame and isFollowup:
+                frameString += '-{} {}'.format(previous, frame)
+                isFollowup = False
+                previous = frame
+                continue
+            isFollowup = True
+            previous = frame
+        else:
+            if isFollowup:
+                frameString += '-{}'.format(frame)
+
+        return frameString
