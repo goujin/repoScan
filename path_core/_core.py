@@ -5,10 +5,10 @@ def lss(directory):
     listFiles=[]
     alreadyTestedRegex = []
     files = os.listdir(directory)
-    baseRegex = re.compile(r"(\d+)")
+    baseRegex = re.compile(r"(\d+)") # TODO I think I need to stop using groups
     for basename in files:
         possibleSequence = []  # (regex, result)
-        for match in baseRegex.findall(basename):
+        for match in baseRegex.findall(basename):   # TODO check compiledRegex.finditer() instead
             print("testing basename: {}".format(basename))
             # regexComponent = "(\d{" + str(len(match)) + "})"
             newRegex = basename.replace(match, r'(\d+)')
@@ -68,8 +68,8 @@ class Sequence(object):
         sequence = cls()
         sequence.frames = files
 
-        match = filter(regex, files)
-        padding = '%d' if len(match[0]) == 1 else '%0{}d'.format(len(match[0]))
+        match = [regex.match(name).group(1) for name in files]
+        padding = '%d' if len(match[0]) == 1 else '%{:02}d'.format(len(max(match)))
         sequence.path = files[0].replace(match[0], padding)
         sequence.frameRange = cls._figureOutFrameRange(match)
         return sequence
@@ -85,6 +85,10 @@ class Sequence(object):
         :type frameNumbers: list
         :return: str
         """
+        #TODO implement this new design
+        # So we make on function that analyses continuous sequence pattern, it extract a list of list of frames
+        # from which we can cycle through and write
+        # "{}-{}.format(min(listFrames), max(listFrames)) if len(listFrames > 1 else str(listFrames[0]))"
         frameNumbers = [int(x) for x in frameNumbers]
         frameNumbers.sort()
         maxPoint = max(frameNumbers)
