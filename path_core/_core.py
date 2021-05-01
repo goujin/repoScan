@@ -12,7 +12,7 @@ def lss(directory):
         maxHit = 1
         bestResult = None
         for regex in possibleRegexs:
-            correspondingHits = filter(regex.match, files)
+            correspondingHits = list(filter(regex.match, files))
             if not correspondingHits:
                 continue
             if maxHit < len(correspondingHits):
@@ -35,6 +35,7 @@ def lss(directory):
         else:
             result += "1 {}\n".format(each)
     print(result)
+    return result
 
 def _constructPossibleSequenceRegex(fileName):
     """Implementation details on how to build a useful list of regex based on possible padding inside a fileName.
@@ -53,14 +54,29 @@ def _constructPossibleSequenceRegex(fileName):
 
 class Sequence(object):
     def __init__(self):
-        self.frames = None
-        self.path = None
-        self.frameRange = None
+        self.__frames = None
+        self.__path = None
+        self.__frameRange = None
         pass
 
     def __str__(self):
         """Implementation details to convert self to a string."""
-        return ' '.join([str(len(self.frames)), self.path, self.frameRange])
+        return ' '.join([str(len(self.frame)), self.path, self.frameRange])
+
+    @property
+    def frame(self):
+        """Property to access files associated with the sequence."""
+        return self.__frames
+
+    @property
+    def path(self):
+        """Property to access the path abstraction of the sequence."""
+        return self.__path
+
+    @property
+    def frameRange(self):
+        """Property that returns a string like representation of the frameRange."""
+        return self.__frameRange
 
     @classmethod
     def fromRegexAndFiles(cls, regex, files):
@@ -76,7 +92,7 @@ class Sequence(object):
             raise ValueError("Regex does not match given files.")
 
         sequence = cls()
-        sequence.frames = files
+        sequence.__frames = files
 
         groups = [regex.match(name).group(1) for name in files]
         frames = [int(group) for group in groups]
@@ -87,8 +103,8 @@ class Sequence(object):
         padding = '%d' if min(digitCount) == 1 else '%{:02}d'.format(min(digitCount))
         delimiter = regex.match(files[0]).regs[1]
         fileName = files[0]
-        sequence.path = fileName[:delimiter[0]] + padding + fileName[delimiter[1]:]
-        sequence.frameRange = cls._figureOutFrameRange(frames)
+        sequence.__path = fileName[:delimiter[0]] + padding + fileName[delimiter[1]:]
+        sequence.__frameRange = cls._figureOutFrameRange(frames)
         return sequence
 
     @staticmethod

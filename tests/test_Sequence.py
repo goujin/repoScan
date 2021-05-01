@@ -12,11 +12,10 @@ class TestSequence(unittest.TestCase):
         2) a single frame at the end of the string + standard behavior
         """
 
-
-        data = ["001", "005", "007"] + [str(x) for x in range(9, 15)]
+        data = [1, 5, 7] + list(range(9, 15))
 
         self.assertEqual(Sequence._figureOutFrameRange(data), '1 5 7 9-14')
-        data.append('17')
+        data.append(17)
         self.assertEqual(Sequence._figureOutFrameRange(data), '1 5 7 9-14 17')
 
     def test_SequenceFromRegexAndFiles(self):
@@ -26,7 +25,7 @@ class TestSequence(unittest.TestCase):
         """
         allTestsCases = [[re.compile(r'file(\d+).03.rgb'),
                           ['file03.03.rgb', 'file04.03.rgb', 'file05.03.rgb', 'file06.03.rgb'],
-                          r'4 file%d.03.rgb 3-6',
+                          r'4 file%02d.03.rgb 3-6',
                           ],  # standard test, but we start with identical numbers on first frame for extra challenge
                          [re.compile(r'file1.(\d+).rgb'),
                           ['file1.9.rgb', 'file1.10.rgb', 'file1.11.rgb', 'file1.12.rgb', 'file1.13.rgb'],

@@ -8,8 +8,8 @@ class Test_lss(unittest.TestCase):
 
     def test_constructPossibleSequenceRegex(self):
         test_cases = [
-            ['file03.03.rgb', [r'(file)(\d+)(.03.rgb)', r'(file03.)(\d+)(.rgb)']],
-            ['file3030.030', [r'(file)(\d+)(.030)', r'(file3030.)(\d+)']],
+            ['file03.03.rgb', [r'file(\d+).03.rgb', r'file03.(\d+).rgb']],
+            ['file3030.030', [r'file(\d+).030', r'file3030.(\d+)']],
         ]
         for x, (basename, regexStrings) in enumerate(test_cases):
             with self.subTest(i=x):
@@ -19,14 +19,15 @@ class Test_lss(unittest.TestCase):
 
     def test_lss_standard(self):
         answer = ("1 alpha.txt\n"
+                  "1 file.info.03.rgb\n"
                   "4 file01_%04d.rgb 40-43\n"
                   "4 file02_%04d.rgb 44-47\n"
                   "4 file%d.03.rgb 1-4\n"
-                  "1 file.info.03.rgb\n")
+                  )
 
         testDir = r"F:\dev\repoScan\tests\testDirectory1"  # TODO make relative to python script
         result = path_core._core.lss(testDir)
-        self.assertEqual(result, answer)
+        self.assertEqual(answer, result)
 
 if __name__ == '__main__':
     unittest.main()
