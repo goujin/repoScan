@@ -3,39 +3,29 @@ import os
 TEST_DIRECTORY = r"F:\dev\repoScan\tests\testDirectory1"
 def lss(directory):
     listFiles=[]
-    alreadyTestedRegex = []
     files = os.listdir(directory)
     dealtWithFile = []
-    baseRegex = re.compile(r"(\d+)")
     for basename in files:
         if basename in dealtWithFile:
             continue
-        possibleSequence = []  # (regex, result)
-        for match in baseRegex.findall(basename):   # TODO check compiledRegex.finditer() instead
-            print("testing basename: {}".format(basename))
-            # regexComponent = "(\d{" + str(len(match)) + "})"
-            # TODO make new regex use string.split(match) and then build a regex string like this # (file.)(\d +)(.03.rgb) if we use that we avoid issues later on and we can easily replace stuff
-            newRegex = basename.replace(match, r'(\d+)')  # FIXME this is a major flaw. file03.03.rg replace 03, we just broke it
-            if newRegex in alreadyTestedRegex:
+        possibleRegexs = _constructPossibleSequenceRegex(basename)
+        maxHit = 1
+        bestResult = None
+        for regex in possibleRegexs:
+            correspondingHits = filter(regex.match, files)
+            if not correspondingHits:
                 continue
-            newSearch = re.compile(newRegex)
-            matchingFiles = filter(newSearch.search, files)
+            if maxHit < len(correspondingHits):
+                maxHit = len(correspondingHits)
+                bestResult = [regex, correspondingHits]
 
-            possibleSequence.append((newSearch, matchingFiles))
-        if possibleSequence:
-            maxMatch = 0
-            for regex, results in possibleSequence:
-                if len(results) == 1 and maxMatch == 0:
-                    bestResults = None
-                elif len(results) > maxMatch:
-                    maxMatch = len(results)
-                    bestRegex = regex
-                    bestResults = results
-            if bestResults:
-                listFiles.append(Sequence.fromRegexAndFiles(bestRegex, bestResults))
-                dealtWithFile.extend(bestResults)
-            else:
-                listFiles.append(basename)
+        # TODO make warning system to communicate possible alternative. Two equal sequence object are possible
+        #  this would have to be run post result compilation
+        if bestResult:
+            listFiles.append(Sequence.fromRegexAndFiles(*bestResult))
+        else:
+            listFiles.append(basename)
+
     print(listFiles)
     result = ''
     for each in listFiles:
@@ -45,6 +35,22 @@ def lss(directory):
             result += "1 {}\n".format(each)
     print(result)
 
+def _constructPossibleSequenceRegex(fileName):
+    """Implementation details on how to build a useful list of regex based on possible padding inside a fileName.
+
+    :param fileName: a file name
+    :type fileName: str
+    :return: a list of possible regex
+    :rtype: list
+    """
+    regexs = []
+    for match in re.finditer(r'\d+', fileName):
+        delimiter = match.span()
+        newRegex = '({})({})'.format(fileName[:delimiter[0]], r'\d+')
+        if fileName[delimiter[1]:]:
+            newRegex += '({})'.format(fileName[delimiter[1]:])
+        regexs.append(re.compile(newRegex))
+    return regexs
 
 class Sequence(object):
     def __init__(self):
