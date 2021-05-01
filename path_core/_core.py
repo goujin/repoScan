@@ -4,9 +4,9 @@ TEST_DIRECTORY = r"F:\dev\repoScan\tests\testDirectory1"
 def lss(directory):
     listFiles=[]
     files = os.listdir(directory)
-    dealtWithFile = []
+    alreadyDealtWithFiles = []
     for basename in files:
-        if basename in dealtWithFile:
+        if basename in alreadyDealtWithFiles:
             continue
         possibleRegexs = _constructPossibleSequenceRegex(basename)
         maxHit = 1
@@ -23,6 +23,7 @@ def lss(directory):
         #  this would have to be run post result compilation
         if bestResult:
             listFiles.append(Sequence.fromRegexAndFiles(*bestResult))
+            alreadyDealtWithFiles.extend(bestResult[1])
         else:
             listFiles.append(basename)
 
@@ -46,9 +47,7 @@ def _constructPossibleSequenceRegex(fileName):
     regexs = []
     for match in re.finditer(r'\d+', fileName):
         delimiter = match.span()
-        newRegex = '({})({})'.format(fileName[:delimiter[0]], r'\d+')
-        if fileName[delimiter[1]:]:
-            newRegex += '({})'.format(fileName[delimiter[1]:])
+        newRegex = fileName[:delimiter[0]] + r'(\d+)' + fileName[delimiter[1]:]
         regexs.append(re.compile(newRegex))
     return regexs
 
@@ -60,30 +59,44 @@ class Sequence(object):
         pass
 
     def __str__(self):
+        """Implementation details to convert self to a string."""
         return ' '.join([str(len(self.frames)), self.path, self.frameRange])
 
     @classmethod
     def fromRegexAndFiles(cls, regex, files):
+        """Entry point to generate a Sequence object from a regex if given a regex and list of files.
+
+        :param regex: a compiled regex
+        :param files: a list of file name
+        :type files: list
+        :return: a Sequence object
+        :rtype: class:`Sequence`
+        """
+        if files != list(filter(regex.match, files)):
+            raise ValueError("Regex does not match given files.")
+
         sequence = cls()
         sequence.frames = files
 
-        match = [regex.match(name).group(1) for name in files]
-        padding = '%d' if len(max(match)) == 1 else '%{:02}d'.format(len(max(match)))
-        # (file)(\d +)(.03.rgb)
-        # et puis remplacer avec ceci
-        # g<1>test\g<3>
-        sequence.path = files[0].replace(match[0], padding) # FIXME this is a major flaw. file03.03.rg replace 03, we just broke it
-        sequence.frameRange = cls._figureOutFrameRange(match)
+        groups = [regex.match(name).group(1) for name in files]
+        frames = [int(group) for group in groups]
+        digitCount = [len(group) for group in groups]
+        # assumption is that a padding can be calculated by the lowest frame number of digits
+        # ex of no padding at work: 8-9-10-11 ; 1-2-3 and non-valid values: 10-11-12 that's padding 2
+        # ex of padding 2 at work: 99-100-101; 10-11-12 and non-valid values: 100-101 that's padding 3
+        padding = '%d' if min(digitCount) == 1 else '%{:02}d'.format(min(digitCount))
+        delimiter = regex.match(files[0]).regs[1]
+        fileName = files[0]
+        sequence.path = fileName[:delimiter[0]] + padding + fileName[delimiter[1]:]
+        sequence.frameRange = cls._figureOutFrameRange(frames)
         return sequence
 
     @staticmethod
     def _figureOutFrameRange(frameNumbers):
         """
         Implementation details to output a frame range string in this style "40-43 45-49 50 53-54"
-        It will takes in comatch[0]nsideration that the frames might come with padding and it will remove it by using
-        `str(int(n))`.
         padding which must be removed to
-        :param frameNumbers: a list of strings representing frames.
+        :param frameNumbers: a list of integers.
         :type frameNumbers: list
         :return: str
         """
@@ -91,7 +104,7 @@ class Sequence(object):
         # So we make on function that analyses continuous sequence pattern, it extract a list of list of frames
         # from which we can cycle through and write
         # "{}-{}.format(min(listFrames), max(listFrames)) if len(listFrames > 1 else str(listFrames[0]))"
-        frameNumbers = [int(x) for x in frameNumbers]
+        frameNumbers = list(frameNumbers)
         frameNumbers.sort()
         maxPoint = max(frameNumbers)
         frameString = ''
