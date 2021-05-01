@@ -1,8 +1,10 @@
 import re
+import pathlib
 import sys
-sys.path.append(r'F:\dev\repoScan')
+sys.path.append(str(pathlib.Path(__file__).parent.parent))  # relative configuration
 import path_core._core
 import unittest
+TEST_DIR = pathlib.Path(__file__).parent
 
 class Test_lss(unittest.TestCase):
 
@@ -25,7 +27,7 @@ class Test_lss(unittest.TestCase):
                   "4 file%d.03.rgb 1-4\n"
                   )
 
-        testDir = r"F:\dev\repoScan\tests\testDirectory1"  # TODO make relative to python script
+        testDir = TEST_DIR.joinpath('testDirectory1')
         result = path_core._core.lss(testDir)
         self.assertEqual(answer, result)
 
