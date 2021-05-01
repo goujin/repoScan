@@ -5,13 +5,17 @@ def lss(directory):
     listFiles=[]
     alreadyTestedRegex = []
     files = os.listdir(directory)
+    dealtWithFile = []
     baseRegex = re.compile(r"(\d+)") # TODO I think I need to stop using groups
     for basename in files:
+        if basename in dealtWithFile:
+            continue
         possibleSequence = []  # (regex, result)
         for match in baseRegex.findall(basename):   # TODO check compiledRegex.finditer() instead
             print("testing basename: {}".format(basename))
             # regexComponent = "(\d{" + str(len(match)) + "})"
-            newRegex = basename.replace(match, r'(\d+)')
+            # TODO make new regex use string.split(match) and then build a regex string like this # (file.)(\d +)(.03.rgb) if we use that we avoid issues later on and we can easily replace stuff
+            newRegex = basename.replace(match, r'(\d+)')  # FIXME this is a major flaw. file03.03.rg replace 03, we just broke it
             if newRegex in alreadyTestedRegex:
                 continue
             newSearch = re.compile(newRegex)
@@ -21,39 +25,31 @@ def lss(directory):
         if possibleSequence:
             maxMatch = 0
             for regex, results in possibleSequence:
-                if len(results) == 1:
+                if len(results) == 1 and maxMatch == 0:
                     bestResults = None
                 elif len(results) > maxMatch:
                     maxMatch = len(results)
                     bestRegex = regex
                     bestResults = results
             if bestResults:
-
                 print bestRegex.pattern
+                listFiles.append(Sequence.fromRegexAndFiles(bestRegex, bestResults))
+                dealtWithFile.extend(bestResults)
                 print "I'm a sequence: {}".format(bestResults)
             else:
+                listFiles.append(basename)
                 print("I'm a file: {}".format(basename))
-        # listFiles.append(Sequence.fromList(bestResults))
-
-
-
-    result = filter(regex.match, files)
+    print(listFiles)
+    result = ''
+    for each in listFiles:
+        if isinstance(each, Sequence):
+            result += str(each) + "\n"
+        else:
+            result += "1 {}\n".format(each)
     print result
-
-def recursiveCheckPatterns(path):
-    pass
-
-# lss(TEST_DIRECTORY)
-
-
-
-class LonelyFile(object):
-    # this is probably safe to assume
-    pass
 
 
 class Sequence(object):
-    # TODO implement this for bonus point in handling sequences
     def __init__(self):
         self.frames = None
         self.path = None
@@ -69,8 +65,11 @@ class Sequence(object):
         sequence.frames = files
 
         match = [regex.match(name).group(1) for name in files]
-        padding = '%d' if len(match[0]) == 1 else '%{:02}d'.format(len(max(match)))
-        sequence.path = files[0].replace(match[0], padding)
+        padding = '%d' if len(max(match)) == 1 else '%{:02}d'.format(len(max(match)))
+        # (file)(\d +)(.03.rgb)
+        # et puis remplacer avec ceci
+        # g<1>test\g<3>
+        sequence.path = files[0].replace(match[0], padding) # FIXME this is a major flaw. file03.03.rg replace 03, we just broke it
         sequence.frameRange = cls._figureOutFrameRange(match)
         return sequence
 
@@ -78,7 +77,7 @@ class Sequence(object):
     def _figureOutFrameRange(frameNumbers):
         """
         Implementation details to output a frame range string in this style "40-43 45-49 50 53-54"
-        It will takes in consideration that the frames might come with padding and it will remove it by using
+        It will takes in comatch[0]nsideration that the frames might come with padding and it will remove it by using
         `str(int(n))`.
         padding which must be removed to
         :param frameNumbers: a list of strings representing frames.
