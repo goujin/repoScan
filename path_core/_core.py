@@ -27,7 +27,6 @@ def lss(directory):
         else:
             listFiles.append(basename)
 
-    print(listFiles)
     result = ''
     for each in listFiles:
         if isinstance(each, Sequence):
@@ -111,39 +110,31 @@ class Sequence(object):
     def _figureOutFrameRange(frameNumbers):
         """
         Implementation details to output a frame range string in this style "40-43 45-49 50 53-54"
-        padding which must be removed to
         :param frameNumbers: a list of integers.
         :type frameNumbers: list
         :return: str
         """
-        #TODO implement this new design
-        # So we make on function that analyses continuous sequence pattern, it extract a list of list of frames
-        # from which we can cycle through and write
-        # "{}-{}.format(min(listFrames), max(listFrames)) if len(listFrames > 1 else str(listFrames[0]))"
-        frameNumbers = list(frameNumbers)
-        frameNumbers.sort()
-        maxPoint = max(frameNumbers)
-        frameString = ''
-        previous = None
-        isFollowup = None
+        previousFrame = None
+        sequenceStart = None
+        rangeElement = []
         for frame in frameNumbers:
-            if not previous:
-                frameString += str(frame)
-                previous = frame
+            if not previousFrame:
+                previousFrame = frame
+                sequenceStart = frame
                 continue
-            if previous+1 != frame and not isFollowup:
-                frameString += ' {}'.format(frame)
-                previous = frame
-                continue
-            if previous+1 != frame and isFollowup:
-                frameString += '-{} {}'.format(previous, frame)
-                isFollowup = False
-                previous = frame
-                continue
-            isFollowup = True
-            previous = frame
+            if previousFrame + 1 == frame:
+                previousFrame = frame
+            else:
+                if sequenceStart != previousFrame:
+                    rangeElement.append("{}-{}".format(sequenceStart, previousFrame))
+                else:
+                    rangeElement.append(str(previousFrame))
+                previousFrame = frame
+                sequenceStart = frame
         else:
-            if isFollowup:
-                frameString += '-{}'.format(frame)
+            if sequenceStart != previousFrame:
+                rangeElement.append("{}-{}".format(sequenceStart, previousFrame))
+            else:
+                rangeElement.append(str(previousFrame))
 
-        return frameString
+        return ' '.join(rangeElement)
