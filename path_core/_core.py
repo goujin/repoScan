@@ -6,7 +6,7 @@ def lss(directory):
     alreadyTestedRegex = []
     files = os.listdir(directory)
     dealtWithFile = []
-    baseRegex = re.compile(r"(\d+)") # TODO I think I need to stop using groups
+    baseRegex = re.compile(r"(\d+)")
     for basename in files:
         if basename in dealtWithFile:
             continue
@@ -32,13 +32,10 @@ def lss(directory):
                     bestRegex = regex
                     bestResults = results
             if bestResults:
-                print bestRegex.pattern
                 listFiles.append(Sequence.fromRegexAndFiles(bestRegex, bestResults))
                 dealtWithFile.extend(bestResults)
-                print "I'm a sequence: {}".format(bestResults)
             else:
                 listFiles.append(basename)
-                print("I'm a file: {}".format(basename))
     print(listFiles)
     result = ''
     for each in listFiles:
@@ -46,7 +43,7 @@ def lss(directory):
             result += str(each) + "\n"
         else:
             result += "1 {}\n".format(each)
-    print result
+    print(result)
 
 
 class Sequence(object):
