@@ -4,9 +4,9 @@ import os
 
 
 def lss(directory):
-    """A implementation of c like lss print."""
-    container = FolderContainer.getContainerFromFolder(directory)
-    print(container)
+    """A custom implementation ls following the c style printf."""
+    container = FolderContainer(directory)
+    print(str(container))
 
 
 class FolderContainer(object):
