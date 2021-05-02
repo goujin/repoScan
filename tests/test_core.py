@@ -4,6 +4,7 @@ import sys
 sys.path.append(str(pathlib.Path(__file__).parent.parent))  # relative configuration
 import path_core._core
 import unittest
+from unittest.mock import patch
 TEST_DIR = pathlib.Path(__file__).parent
 
 
@@ -80,6 +81,43 @@ class Test_FileContainer(unittest.TestCase):
         testDir = str(TEST_DIR.joinpath('testDirectory1'))
         container = path_core._core.FolderContainer(testDir)
         self.assertEqual(testDir, container.dir)
+
+    def test_getContainerFromFolder2(self):
+        """Testing if we can get a FolderContainer and if the properties are working with another good example."""
+        sequence = ['sd_fx29.{:04}.rgb'.format(x) for x in range(101, 148)]
+        singleFiles = ['elem.info', 'strange.xml']
+
+        result1 = ('1 elem.info\n'
+                   '1 strange.xml\n'
+                   '47 sd_fx29.%04d.rgb 101-147\n'
+                   )
+
+        result2 = ('1 elem.info\n'
+                   '1 strange.xml\n'
+                   '46 sd_fx29.%04d.rgb 101-121 123-147\n'
+                   )
+        listDirSideEffect = [singleFiles + sequence]
+        sequence.pop(21)
+        listDirSideEffect.append(singleFiles + sequence)
+        with patch("os.listdir", side_effect=iter(listDirSideEffect)) as mockedListDir, \
+                patch('os.path.exists', return_value=True) as mockedPathExists, \
+                patch('os.path.isdir', return_value=True) as mockedIsDir:
+            for x, result in enumerate([result1, result2]):
+                with self.subTest(i=x):
+                    container = path_core._core.FolderContainer('mockedTest')
+                    self.assertEqual(result, str(container))
+            mockedListDir.assert_called()
+            mockedPathExists.assert_called()
+
+        # sequence.pop(22)
+        # files = singleFiles + sequence
+        # with patch("os.listDir", return_value=files) as mockedListDir, \
+        #         patch('os.path.exists', return_value=True) as mockedPathExists:
+        #     container = path_core._core.FolderContainer('mockedTest')
+        #     self.assertEqual(result2, str(container))
+        #     mockedListDir.assert_called_once()
+        #     mockedPathExists.assert_called_once()
+
 
 
 if __name__ == '__main__':
