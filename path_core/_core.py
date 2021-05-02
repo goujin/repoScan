@@ -109,6 +109,30 @@ class Sequence(object):
         self.__frameRange = None
         pass
 
+    def __hash__(self):
+        """Makes a hash for the object."""
+        return hash(str(self))
+
+    def __eq__(self, other):
+        """checks the equality of the class
+
+        :param other: an other element to compare too.
+        """
+        if not isinstance(other, self.__class__):
+            return False
+        if all([self.frame == other.frame,
+                self.path == other.path,
+                self.frameRange == other.frameRange]):
+            return True
+        return False
+
+    def __ne__(self, other):
+        """Check the non equality of the class.
+
+        :param other: an other element to compare too.
+        """
+        return not self == other
+
     def __str__(self):
         """Implementation details to convert self to a string."""
         return ' '.join([str(len(self.frame)), self.path, self.frameRange])
@@ -141,8 +165,10 @@ class Sequence(object):
         return self.__frameRange
 
     @classmethod
-    def fromRegexAndFiles(cls, regex, files):  # TODO make it filter it's own files to use
+    def fromRegexAndFiles(cls, regex, files):
         """Entry point to generate a Sequence object from a regex if given a regex and list of files.
+        The files will be filtered to find out which matches the regex, so the list of files isn't obligated to
+        contain files that matches the regex. The function will find the files that matches.
 
         :param regex: a compiled regex
         :param files: a list of file name
@@ -150,9 +176,9 @@ class Sequence(object):
         :return: a Sequence object
         :rtype: class:`Sequence`
         """
-        if files != list(filter(regex.match, files)):
-            raise ValueError("Regex does not match given files.")
-
+        files = list(filter(regex.match, files))
+        if not files:
+            raise ValueError("The regex doesn't find any match in the given files")
         sequence = cls()
         sequence.__frames = files
 

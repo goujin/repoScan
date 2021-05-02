@@ -1,3 +1,4 @@
+import os
 import re
 import pathlib
 import sys
@@ -79,8 +80,16 @@ class Test_FileContainer(unittest.TestCase):
         with self.assertRaises(ValueError):
             path_core._core.FolderContainer('/imaginaryPath/')
         testDir = str(TEST_DIR.joinpath('testDirectory1'))
+
+        listOfFiles = os.listdir(testDir)
+        testRegex = [re.compile(r) for r in [r"file01_(\d+).rgb", r"file02_(\d+).rgb", r"file(\d+).03.rgb"]]
+        result = {'alpha.txt', 'file.info.03.rgb'}.union({
+            path_core._core.Sequence.fromRegexAndFiles(regex, listOfFiles) for regex in testRegex})
+
+
         container = path_core._core.FolderContainer(testDir)
         self.assertEqual(testDir, container.dir)
+        self.assertEqual(result, set(container.contents))
 
     def test_getContainerFromFolder2(self):
         """Testing if we can get a FolderContainer and if the properties are working with another good example."""
