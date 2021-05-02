@@ -6,32 +6,8 @@ import path_core._core
 import unittest
 TEST_DIR = pathlib.Path(__file__).parent
 
-class Test_lss(unittest.TestCase):
 
-    def test_constructPossibleSequenceRegex(self):
-        test_cases = [
-            ['file03.03.rgb', [r'file(\d+).03.rgb', r'file03.(\d+).rgb']],
-            ['file3030.030', [r'file(\d+).030', r'file3030.(\d+)']],
-        ]
-        for x, (basename, regexStrings) in enumerate(test_cases):
-            with self.subTest(i=x):
-                result = path_core._core._constructPossibleSequenceRegex(basename)
-                expectedResult = [re.compile(regexString) for regexString in regexStrings]
-                self.assertEqual(expectedResult, result)
-
-    def test_lss_standard(self):
-        answer = ("1 alpha.txt\n"
-                  "1 file.info.03.rgb\n"
-                  "4 file01_%04d.rgb 40-43\n"
-                  "4 file02_%04d.rgb 44-47\n"
-                  "4 file%d.03.rgb 1-4\n"
-                  )
-
-        testDir = TEST_DIR.joinpath('testDirectory1')
-        result = path_core._core.lss(testDir)
-        self.assertEqual(answer, result)
-
-class TestSequence(unittest.TestCase):
+class Test_Sequence(unittest.TestCase):
     def test_SequenceFrameRangeString(self):
         """
         test 2 cases,
@@ -68,6 +44,43 @@ class TestSequence(unittest.TestCase):
             result = path_core._core.Sequence.fromRegexAndFiles(regex, files)
             with self.subTest(i=x):
                 self.assertEqual(expectedResult, str(result))
+
+class Test_FileContainer(unittest.TestCase):
+
+    def test_constructPossibleSequenceRegex(self):
+        """Testing if the regex built are standard for use with the Sequence.SequenceFromRegexAndFiles expectation."""
+        test_cases = [
+            ['file03.03.rgb', [r'file(\d+).03.rgb', r'file03.(\d+).rgb']],
+            ['file3030.030', [r'file(\d+).030', r'file3030.(\d+)']],
+        ]
+        for x, (fileName, regexStrings) in enumerate(test_cases):
+            with self.subTest(i=x):
+                result = path_core._core.FolderContainer._constructPossibleSequenceRegex(fileName)
+                expectedResult = [re.compile(regexString) for regexString in regexStrings]
+                self.assertEqual(expectedResult, result)
+
+    def test_containerSerialization(self):
+        """Testing the serialization of a container which needs to format to a certain style."""
+        answer = ("1 alpha.txt\n"
+                  "1 file.info.03.rgb\n"
+                  "4 file01_%04d.rgb 40-43\n"
+                  "4 file02_%04d.rgb 44-47\n"
+                  "4 file%d.03.rgb 1-4\n"
+                  )
+
+        testDir = str(TEST_DIR.joinpath('testDirectory1'))
+        container = path_core._core.FolderContainer(testDir)
+        self.assertEqual(answer, str(container))
+
+
+    def test_getContainerFromFolder(self):
+        """Testing if we can get a FolderContainer and if the properties are working."""
+        with self.assertRaises(ValueError):
+            path_core._core.FolderContainer('/imaginaryPath/')
+        testDir = str(TEST_DIR.joinpath('testDirectory1'))
+        container = path_core._core.FolderContainer(testDir)
+        self.assertEqual(testDir, container.dir)
+
 
 if __name__ == '__main__':
     unittest.main()
